@@ -12,6 +12,7 @@ class Main extends Component {
         newReppo: "",
         repositories: [],
         loading: false,
+        error: false,
     };
 
     // carregar os dados do local storage
@@ -41,23 +42,35 @@ class Main extends Component {
 
         this.setState({ loading: true });
 
-        const { newReppo, repositories } = this.state;
+        try {
+            const { newReppo, repositories } = this.state;
 
-        const response = await api.get(`/repos/${newReppo}`);
+            if (!newReppo) throw "Você precisa indicar um repositório";
 
-        const data = {
-            name: response.data.full_name,
-        };
+            const hasRepo = repositories.find(r => r.name === newReppo);
+            if (hasRepo) throw "Repositório duplicado";
 
-        this.setState({
-            repositories: [...repositories, data],
-            newReppo: "",
-            loading: false,
-        });
+            const response = await api.get(`/repos/${newReppo}`);
+
+            const data = {
+                name: response.data.full_name,
+            };
+
+            this.setState({
+                repositories: [...repositories, data],
+                newReppo: "",
+                loading: false,
+            });
+        } catch (e) {
+            this.setState({
+                error: true,
+                loading: false,
+            });
+        }
     };
 
     render() {
-        const { newReppo, repositories, loading } = this.state;
+        const { newReppo, repositories, loading, error } = this.state;
 
         return (
             <Container>
@@ -66,7 +79,7 @@ class Main extends Component {
                     Repositórios
                 </h1>
 
-                <Form onSubmit={this.handleSubmit}>
+                <Form onSubmit={this.handleSubmit} error={error}>
                     <input
                         type="text"
                         placeholder="Adicionar repositório"
